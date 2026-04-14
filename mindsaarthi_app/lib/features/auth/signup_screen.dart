@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsaarthi_app/core/widgets/app_snackbar.dart';
@@ -75,11 +76,13 @@ class SignupScreen extends ConsumerWidget {
                     passController.text.trim(),
                   );
 
-                  AppSnackbar.show(context, message: msg, isError: !success);
-
                   if (success) {
-                    await Future.delayed(const Duration(seconds: 1));
-                    context.go('/');
+                    AppSnackbar.show(context, message: msg, isError: !success);
+                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                      context.go('/user-info');
+                    });
+                  } else {
+                    AppSnackbar.show(context, message: msg, isError: !success);
                   }
                 },
                 child:
@@ -116,10 +119,37 @@ class SignupScreen extends ConsumerWidget {
                       radius: 16,
                       backgroundImage: AssetImage("assets/images/google.png"),
                     ),
-                    onPressed: () => context.push('/settings'),
+                    onPressed: () async {
+                      final (success, msg) = await notifier.signUpWithGoogle();
+
+                      if (success) {
+                        AppSnackbar.show(
+                          context,
+                          message: msg,
+                          isError: !success,
+                        );
+                        SchedulerBinding.instance.addPostFrameCallback((_) {
+                          context.go('/user-info');
+                        });
+                      } else {
+                        AppSnackbar.show(
+                          context,
+                          message: msg,
+                          isError: !success,
+                        );
+                      }
+                    },
                   ),
                   const SizedBox(width: 20),
-                  _socialIcon(Icons.phone),
+                  _socialIcon(
+                    Icons.phone,
+                    onPressed: () {
+                      AppSnackbar.show(
+                        context,
+                        message: "Phone signin coming soon",
+                      );
+                    },
+                  ),
                 ],
               ),
 
@@ -176,11 +206,14 @@ class SignupScreen extends ConsumerWidget {
     );
   }
 
-  Widget _socialIcon(IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: const BoxDecoration(shape: BoxShape.circle),
-      child: Icon(icon, color: Color(0xFFD9D9D9), size: 30),
+  Widget _socialIcon(IconData icon, {VoidCallback? onPressed}) {
+    return IconButton(
+      icon: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: const BoxDecoration(shape: BoxShape.circle),
+        child: Icon(icon, color: const Color(0xFFD9D9D9), size: 30),
+      ),
+      onPressed: onPressed,
     );
   }
 }

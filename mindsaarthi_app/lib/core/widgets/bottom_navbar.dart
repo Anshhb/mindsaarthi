@@ -43,7 +43,7 @@ class BottomNavbar extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [navItem("home", 0), navItem("ai", 1), navItem("mood", 2)],
+          children: [navItem("home", 0), navItem("ai", 1), navItem("mood", 2), navItem("moodi", 3)],
         ),
       ),
     );

@@ -1,46 +1,216 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/colors.dart';
+import '../../core/providers/utils_providers.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
-  String getTodayQuote() {
-    final quotes = [
-      "Happiness is a choice. Always choose it.",
-      "You are stronger than you think.",
-      "Every day is a fresh start.",
-      "Your mental health matters.",
-      "Small steps lead to big changes.",
-    ];
+  @override
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
 
-    final day = DateTime.now().day;
-    return quotes[day % quotes.length];
+Widget moodSelector() {
+  final PageController controller = PageController(
+    viewportFraction: 0.35,
+    initialPage: 0,
+  );
+
+  final moods = [
+    {"image": "assets/images/emoji2/Angry.png", "label": "Angry", "value": 8},
+    {"image": "assets/images/emoji2/Sad.png", "label": "Sad", "value": 6},
+    {"image": "assets/images/emoji2/Excited.png", "label": "Okay", "value": 5},
+    {"image": "assets/images/emoji2/Chill.png", "label": "Better", "value": 3},
+    {"image": "assets/images/emoji2/Happy.png", "label": "Great", "value": 2},
+  ];
+
+  int currentPage = 0;
+
+  return StatefulBuilder(
+    builder: (context, setState) {
+      return Column(
+        children: [
+          const SizedBox(height: 20),
+
+          const Text(
+            "How are you feeling now?",
+            style: TextStyle(color: Colors.white70, fontSize: 16),
+          ),
+          const SizedBox(height: 40),
+
+          SizedBox(
+            height: 200,
+            child: OverflowBox(
+              maxHeight: 250,
+              child: PageView.builder(
+                controller: controller,
+                itemCount: moods.length,
+                onPageChanged: (index) {
+                  setState(() => currentPage = index);
+                },
+                itemBuilder: (context, index) {
+                  final isActive = index == currentPage;
+
+                  return AnimatedBuilder(
+                    animation: controller,
+                    builder: (context, child) {
+                      double value = 0;
+
+                      if (controller.position.haveDimensions) {
+                        value = controller.page! - index;
+                      } else {
+                        value = (controller.initialPage - index).toDouble();
+                      }
+
+                      value = value.clamp(-1, 1);
+
+                      double translateY = -40 * (1 - value.abs());
+                      double scale = 1 - (value.abs() * 0.3);
+
+                      return Transform.translate(
+                        offset: Offset(0, translateY),
+                        child: Transform.scale(
+                          scale: scale,
+                          child: GestureDetector(
+                            onTap: () async {
+                              controller.animateToPage(
+                                index,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border:
+                                        (index == currentPage)
+                                            ? Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            )
+                                            : null,
+                                  ),
+                                  child: Image.asset(
+                                    moods[index]["image"] as String,
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          Text(
+            moods[currentPage]["label"] as String,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          const Text(
+            "Champion on daily life",
+            style: TextStyle(color: Colors.white54, fontSize: 15),
+          ),
+
+          const SizedBox(height: 20),
+
+          GestureDetector(
+            onTap: () async {
+              final user = FirebaseAuth.instance.currentUser;
+
+              await FirebaseFirestore.instance
+                  .collection("users")
+                  .doc(user!.uid)
+                  .collection("mood")
+                  .add({
+                    "value": moods[currentPage]["value"],
+                    "label": moods[currentPage]["label"],
+                    "timestamp": FieldValue.serverTimestamp(),
+                  });
+
+              context.push(
+                '/ai-response',
+                extra: {"mood": moods[currentPage]["label"]},
+              );
+            },
+            child: SizedBox(
+              height: 60,
+              width: 60,
+              child: Image.asset(
+                "assets/images/emoji2/Button.png",
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? userName;
+  String? profilePictureUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserName();
+    _fetchProfilePicture();
   }
 
-  String _month(int m) {
-    const months = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-    return months[m - 1];
+  Future<void> _fetchUserName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .get();
+      if (doc.exists && doc.data() != null) {
+        setState(() {
+          userName = doc.data()!['name'] ?? '';
+        });
+      }
+    }
   }
 
-  String _formatHour(int h) {
-    final hour = h % 12 == 0 ? 12 : h % 12;
-    return hour.toString();
+  Future<void> _fetchProfilePicture() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection("users")
+              .doc(user.uid)
+              .get();
+      if (doc.exists && doc.data() != null) {
+        setState(() {
+          profilePictureUrl = doc.data()!['profilePictureUrl'];
+        });
+      }
+    }
   }
 
   @override
@@ -71,7 +241,13 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: CircleAvatar(
               radius: 14,
-              backgroundImage: AssetImage("assets/images/user_profile.png"),
+              backgroundImage:
+                  profilePictureUrl != null && profilePictureUrl!.isNotEmpty
+                      ? NetworkImage(profilePictureUrl!) as ImageProvider
+                      : const AssetImage("assets/images/user_profile.png"),
+              onBackgroundImageError: (exception, stackTrace) {
+                print("Error loading profile picture: $exception");
+              },
             ),
             onPressed: () => context.push('/settings'),
           ),
@@ -84,21 +260,21 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 10),
-          
+
               Padding(
                 padding: const EdgeInsets.only(left: 40.0),
-                child: const Text(
-                  "Welcome Back !",
-                  style: TextStyle(
+                child: Text(
+                  "Welcome Back${userName != null && userName!.isNotEmpty ? ' $userName' : ''} !",
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-          
+
               const SizedBox(height: 20),
-          
+
               Padding(
                 padding: const EdgeInsets.only(left: 40.0),
                 child: const Text(
@@ -111,32 +287,64 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-          
+
               Padding(
                 padding: const EdgeInsets.all(10),
                 child: Container(
                   padding: const EdgeInsets.all(55),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.primary,
-                        AppColors.primary.withOpacity(0.7),
-                      ],
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFF6B6B), Color(0xFF4ECDC4)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.25),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    getTodayQuote(),
-                    style: const TextStyle(color: Colors.white),
-                  ),
+                  child: ref
+                      .watch(getTodayQuoteProvider)
+                      .when(
+                        data:
+                            (quote) => Text(
+                              quote,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                        loading:
+                            () => const CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                        error:
+                            (error, stack) => const Text(
+                              "Every day is a new opportunity to grow.",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                      ),
                 ),
               ),
               const SizedBox(height: 20),
-              moodCard(3),
-              const SizedBox(height: 20),
-              checkIn(),
+              moodSelector(),
               const SizedBox(height: 30),
-          
+
               Row(
                 children: [
                   Expanded(
@@ -146,11 +354,14 @@ class HomeScreen extends StatelessWidget {
                         height: 120,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
+                          // gradient: LinearGradient(
+                          //   colors: [
+                          //     const Color(0xFF8E2DE2),
+                          //     const Color(0xFF4A00E0),
+                          //   ],
+                          // ),
                           gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFF8E2DE2),
-                              const Color(0xFF4A00E0),
-                            ],
+                            colors: [Color(0xFF9D4EDD), Color(0xFF5A189A)],
                           ),
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -188,11 +399,8 @@ class HomeScreen extends StatelessWidget {
                       height: 120,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFF2193b0),
-                            const Color(0xFF6dd5ed),
-                          ],
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF512F), Color(0xFFDD2476)],
                         ),
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -217,7 +425,10 @@ class HomeScreen extends StatelessWidget {
                           ),
                           Text(
                             "Schedule your activities",
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -225,9 +436,52 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-          
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () => context.push('/vision'),
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.purple, Colors.blue],
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text(
+                        "Analyze Mood via Face",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+
+                  GestureDetector(
+                    onTap: () => context.push('/video'),
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 10),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF00C9A7), Color(0xFF007A7C)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text(
+                        "Analyze Mood via Video",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 30),
-          
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -239,18 +493,21 @@ class HomeScreen extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  Text(
-                    "VIEW ALL >",
-                    style: TextStyle(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w600,
+                  GestureDetector(
+                    onTap: () => context.push('/journal-list'),
+                    child: Text(
+                      "VIEW ALL >",
+                      style: TextStyle(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
-          
+
               const SizedBox(height: 16),
-          
+
               StreamBuilder(
                 stream:
                     FirebaseFirestore.instance
@@ -262,24 +519,25 @@ class HomeScreen extends StatelessWidget {
                         .snapshots(),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const SizedBox();
-          
+
                   final docs = snapshot.data!.docs;
-          
+
                   return Column(
                     children:
                         docs.map((doc) {
                           final timestamp = doc["timestamp"] as Timestamp?;
                           final date = timestamp?.toDate();
-          
+
                           String formattedDate = "";
                           String formattedTime = "";
-          
+
                           if (date != null) {
-                            formattedDate = "${_month(date.month)} ${date.day}";
+                            formattedDate =
+                                "${ref.watch(monthProvider(date.month))} ${date.day}";
                             formattedTime =
-                                "${_formatHour(date.hour)}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? "PM" : "AM"}";
+                                "${ref.watch(formatHourProvider(date.hour))}:${date.minute.toString().padLeft(2, '0')} ${date.hour >= 12 ? "PM" : "AM"}";
                           }
-          
+
                           return GestureDetector(
                             onTap:
                                 () => context.push(
@@ -331,11 +589,15 @@ class HomeScreen extends StatelessWidget {
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.white.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                         ),
                                         child: const Text(
                                           "Free Write",
-                                          style: TextStyle(color: Colors.white70),
+                                          style: TextStyle(
+                                            color: Colors.white70,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -362,76 +624,6 @@ class HomeScreen extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget moodCard(double avgRisk) {
-    String emoji;
-    String label;
-
-    if (avgRisk < 3) {
-      emoji = "😊";
-      label = "Good";
-    } else if (avgRisk < 6) {
-      emoji = "😐";
-      label = "Moderate";
-    } else {
-      emoji = "😞";
-      label = "Stressed";
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1F20),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 30)),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget checkIn() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "How are you feeling today?",
-          style: TextStyle(color: Colors.white),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _emojiButton("😊", 2),
-            _emojiButton("😐", 5),
-            _emojiButton("😞", 8),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _emojiButton(String emoji, int value) {
-    return GestureDetector(
-      onTap: () async {
-        final user = FirebaseAuth.instance.currentUser;
-
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user!.uid)
-            .collection("mood")
-            .add({"value": value, "timestamp": FieldValue.serverTimestamp()});
-      },
-      child: Text(emoji, style: const TextStyle(fontSize: 28)),
     );
   }
 }

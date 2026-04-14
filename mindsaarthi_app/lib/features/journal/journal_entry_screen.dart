@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/colors.dart';
 import '../../services/journal_service.dart';
 
 class JournalEntryScreen extends StatefulWidget {
@@ -11,179 +10,262 @@ class JournalEntryScreen extends StatefulWidget {
 }
 
 class _JournalEntryScreenState extends State<JournalEntryScreen> {
-  final controller = TextEditingController();
+  final DraggableScrollableController sheetController =
+      DraggableScrollableController();
 
-  int get charCount {
-    final text = controller.text.trim();
-    if (text.isEmpty) return 0;
-    return text.length;
-  }
-
-  bool isSaving = false;
+  bool hasNavigated = false;
+  List<String> suggestions = [];
 
   @override
-  Widget build(BuildContext context) {
-    const int minChars = 30;
+  void initState() {
+    super.initState();
 
-    return Scaffold(
-      backgroundColor: AppColors.secondary,
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/images/blue_background.png"),
-                fit: BoxFit.cover,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                ),
+    sheetController.addListener(() {
+      if (sheetController.size > 0.75 && !hasNavigated) {
+        hasNavigated = true;
 
-                const SizedBox(height: 10),
+        context.push('/journal-new').then((_) {
+          hasNavigated = false;
 
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Colors.white24,
-                      child: Icon(Icons.edit, color: Colors.white),
+          sheetController.jumpTo(0.18);
+        });
+      }
+    });
+
+    _loadSuggestions();
+  }
+
+  Future<void> _loadSuggestions() async {
+    final fetched = await JournalService.getSuggestions();
+    setState(() {
+      suggestions = fetched;
+    });
+  }
+
+  Widget suggestedTopics() {
+    if (suggestions.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Suggested Topics",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
+        SizedBox(
+          height: 150,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: suggestions.length,
+            itemBuilder: (context, index) {
+              return TweenAnimationBuilder(
+                duration: Duration(milliseconds: 300 + (index * 100)),
+                tween: Tween(begin: 0.8, end: 1.0),
+                builder: (context, scale, child) {
+                  return Transform.scale(scale: scale, child: child);
+                },
+                child: Container(
+                  width: 220,
+                  margin: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF0F2027).withOpacity(0.8),
+                        const Color(0xFF203A43).withOpacity(0.8),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      "Free Write Entry",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
+                    border: Border.all(color: Colors.white12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.star_border, color: Colors.orange),
+
+                      const SizedBox(height: 12),
+
+                      Expanded(
+                        child: Text(
+                          suggestions[index],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget mindNoteSlider() {
+    return DraggableScrollableSheet(
+      controller: sheetController,
+      initialChildSize: 0.18,
+      minChildSize: 0.18,
+      maxChildSize: 0.95,
+      expand: false,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Color(0xFF1A1C1E),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: SingleChildScrollView(
+            controller: scrollController,
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+
+                Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
 
                 const SizedBox(height: 10),
 
-                Row(
-                  children: const [
-                    Icon(Icons.access_time, color: Colors.white70, size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      "Write freely for 5 minutes",
-                      style: TextStyle(color: Colors.white70),
+                const Text(
+                  "Swipe up to add your mind note",
+                  style: TextStyle(color: Colors.white54),
+                ),
+
+                const SizedBox(height: 10),
+
+                Container(
+                  height: 500,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFD2A8FF), Color(0xFF9D4EDD)],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
-                  ],
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(30),
+                    ),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned(
+                        top: 80,
+                        child: Image.asset(
+                          "assets/images/emoji2/Chill.png",
+                          height: 120,
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 30,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: const Text(
+                            "Mind Note",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
 
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.06), 
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Today's Thoughts",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    const Text(
-                      "Let your thoughts flow freely. There's no right or wrong way to journal - every word you write is a step towards better self-understanding.",
-                      style: TextStyle(color: Colors.white70),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        maxLines: null,
-                        expands: true,
-                        onChanged: (_) => setState(() {}),
-                        style: const TextStyle(color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: "Start writing here...",
-                          border: InputBorder.none,
-                          hintStyle: TextStyle(color: Colors.white54),
-                        ),
-                      ),
-                    ),
-
-                    const Divider(),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          charCount < minChars
-                              ? "Write ${minChars - charCount} more characters"
-                              : "Great progress!",
-                          style: const TextStyle(color: Colors.white70),
-                        ),
-
-                        ElevatedButton.icon(
-                          onPressed: charCount < minChars || isSaving
-                              ? null
-                              : () async {
-                                  setState(() => isSaving = true);
-
-                                  await JournalService.saveEntry(controller.text);
-
-                                  context.go('/journal-success');
-                                },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            disabledBackgroundColor:
-                                Colors.grey.shade400,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                          icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                          label: isSaving
-                              ? const SizedBox(
-                                  height: 16,
-                                  width: 16,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text(
-                                  "SAVE ENTRY",
-                                  style: TextStyle(color: Colors.white),
-                                ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => context.pop(),
+        ),
+      ),
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0A0A0E), Color(0xFF121212)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
           ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 10),
+                  Text(
+                    "Let’s add your\nmind note",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 34,
+                      fontWeight: FontWeight.bold,
+                      height: 1.1,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
+                    "Swipe up on the bottom card to start a new journal entry.",
+                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  SizedBox(height: 20),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 10),
+                      child: suggestedTopics(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Align(alignment: Alignment.bottomCenter, child: mindNoteSlider()),
         ],
       ),
     );
