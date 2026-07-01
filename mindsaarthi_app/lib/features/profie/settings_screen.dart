@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mindsaarthi_app/core/widgets/confirmation_dialogue.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
+import 'notifications_page.dart';
+import 'privacy_page.dart';
+import 'support_feedback_page.dart';
+import 'terms_conditions_page.dart';
+import 'privacy_policy_page.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -143,65 +150,142 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            isLoading
-                ? const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                )
-                : _buildUserHeader(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    isLoading
+                        ? const Center(
+                          child: PremiumMindLoader(
+                            message: "Loading your profile...",
+                          ),
+                        )
+                        : _buildUserHeader(),
 
-            const SizedBox(height: 25),
+                    const SizedBox(height: 25),
 
-            const Text("General", style: TextStyle(color: AppColors.primary)),
+                    const Text(
+                      "General",
+                      style: TextStyle(color: AppColors.primary),
+                    ),
 
-            const SizedBox(height: 10),
+                    const SizedBox(height: 10),
 
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1F20),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => context.push('/user-profile'),
-                    child: tile("User Profile", "assets/images/profile.png"),
-                  ),
-                  const Divider(color: Colors.white12),
-                  tile("Notifications", "assets/images/notification.png"),
-                  const Divider(color: Colors.white12),
-                  tile("Privacy", "assets/images/privacy.png"),
-                ],
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1F20),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () => context.push('/user-profile'),
+                            child: tile(
+                              "User Profile",
+                              "assets/images/profile.png",
+                            ),
+                          ),
+                          const Divider(color: Colors.white12),
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => const NotificationsPage(),
+                                  ),
+                                ),
+                            child: tile(
+                              "Notifications",
+                              "assets/images/notification.png",
+                            ),
+                          ),
+                          const Divider(color: Colors.white12),
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const PrivacyPage(),
+                                  ),
+                                ),
+                            child: tile("Privacy", "assets/images/privacy.png"),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    const Text(
+                      "Discover more",
+                      style: TextStyle(color: AppColors.primary),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E1F20),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        children: [
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const SupportFeedbackPage(),
+                                  ),
+                                ),
+                            child: tile(
+                              "Support & feedback",
+                              "assets/images/support.png",
+                            ),
+                          ),
+                          const Divider(color: Colors.white12),
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) =>
+                                            const TermsConditionsPage(),
+                                  ),
+                                ),
+                            child: tile(
+                              "Terms & Conditions",
+                              "assets/images/terms.png",
+                            ),
+                          ),
+                          const Divider(color: Colors.white12),
+                          GestureDetector(
+                            onTap:
+                                () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder:
+                                        (context) => const PrivacyPolicyPage(),
+                                  ),
+                                ),
+                            child: tile(
+                              "Privacy Policy",
+                              "assets/images/privacy_policy.png",
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-
-            const SizedBox(height: 25),
-
-            const Text(
-              "Discover more",
-              style: TextStyle(color: AppColors.primary),
-            ),
-
-            const SizedBox(height: 10),
-
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1F20),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  tile("Support & feedback", "assets/images/support.png"),
-                  const Divider(color: Colors.white12),
-                  tile("Terms & Conditions", "assets/images/terms.png"),
-                  const Divider(color: Colors.white12),
-                  tile("Privacy Policy", "assets/images/privacy_policy.png"),
-                ],
-              ),
-            ),
-
-            const Spacer(),
 
             SizedBox(
               width: double.infinity,
@@ -213,11 +297,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  if (context.mounted) {
-                    context.go('/login');
-                  }
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      return PremiumConfirmDialog(
+                        title: "Confirm Logout",
+                        message: "Are you sure you want to log out?",
+                        confirmText: "Log Out",
+                        cancelText: "Cancel",
+                        icon: Icons.logout,
+                        onConfirm: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) {
+                            context.go('/login');
+                          }
+                        },
+                      );
+                    },
+                  );
                 },
                 child: const Text(
                   "Log Out",

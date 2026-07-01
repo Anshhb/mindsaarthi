@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import 'package:mindsaarthi_app/services/ai_service.dart';
 
 class AIResponseScreen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _AIResponseScreenState extends State<AIResponseScreen> {
         padding: const EdgeInsets.all(20),
         child: isLoading
             ? const Center(
-                child: CircularProgressIndicator(color: Colors.white),
+                child: PremiumMindLoader(message: "Processing your thoughts..."),
               )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

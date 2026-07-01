@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../services/journal_service.dart';
 
 class JournalNewScreen extends StatefulWidget {
@@ -132,7 +133,7 @@ class _JournalNewScreenState extends State<JournalNewScreen> {
                 ),
                 child: Center(
                   child: isSaving
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const PremiumMindLoader(message: "Saving your mind note...")
                       : const Text(
                           "Save Entry",
                           style: TextStyle(

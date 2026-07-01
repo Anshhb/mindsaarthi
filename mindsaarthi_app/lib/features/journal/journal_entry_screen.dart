@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../services/journal_service.dart';
 
 class JournalEntryScreen extends StatefulWidget {
@@ -47,7 +48,7 @@ class _JournalEntryScreenState extends State<JournalEntryScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(20),
-          child: CircularProgressIndicator(color: Colors.white),
+          child: PremiumMindLoader(message: "Fetching some inspiration for your journal entry..."),
         ),
       );
     }

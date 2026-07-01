@@ -48,5 +48,5 @@ def journal_suggestions():
 
 @app.get("/daily-thought")
 def daily_thought():
-    thought = get_ai_reply("Generate a unique and inspiring thought of the day for mental health and self-reflection.")
+    thought = get_ai_reply("Generate a short, simple, and inspiring thought of the day for mental health and self-reflection. Keep it under 20 words.")
     return {"thought": thought["reply"]}

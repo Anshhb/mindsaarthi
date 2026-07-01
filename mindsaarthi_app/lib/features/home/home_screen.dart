@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 import '../../core/providers/utils_providers.dart';
 
@@ -262,7 +263,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 10),
 
               Padding(
-                padding: const EdgeInsets.only(left: 40.0),
+                padding: const EdgeInsets.only(left: 20.0),
                 child: Text(
                   "Welcome Back${userName != null && userName!.isNotEmpty ? ' $userName' : ''} !",
                   style: const TextStyle(
@@ -276,7 +277,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 20),
 
               Padding(
-                padding: const EdgeInsets.only(left: 40.0),
+                padding: const EdgeInsets.only(left: 20.0),
                 child: const Text(
                   "Thought of the day",
                   style: TextStyle(
@@ -322,11 +323,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               textAlign: TextAlign.center,
                             ),
                         loading:
-                            () => const CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
+                            () => const PremiumMindLoader(message: "Loading your daily dose of inspiration..."),
                         error:
                             (error, stack) => const Text(
                               "Every day is a new opportunity to grow.",

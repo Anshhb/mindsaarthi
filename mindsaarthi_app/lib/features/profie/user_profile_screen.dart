@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mindsaarthi_app/core/widgets/app_snackbar.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -243,7 +244,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       body:
           isLoading
               ? const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: PremiumMindLoader(message: "Loading your profile..."),
               )
               : Padding(
                 padding: const EdgeInsets.all(20),
@@ -254,34 +255,61 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       Center(
                         child: GestureDetector(
                           onTap: _pickImage,
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundColor: Colors.white24,
-                            backgroundImage:
-                                selectedImage != null
-                                    ? FileImage(File(selectedImage!.path))
-                                        as ImageProvider
-                                    : (profilePictureUrl != null &&
-                                            profilePictureUrl!.isNotEmpty
-                                        ? NetworkImage(profilePictureUrl!)
-                                        : const AssetImage(
-                                          "assets/images/user_profile.png",
-                                        )),
-                            child:
-                                selectedImage == null &&
-                                        (profilePictureUrl == null ||
-                                            profilePictureUrl!.isEmpty)
-                                    ? const Icon(
-                                      Icons.add_a_photo,
+                          child: Stack(
+                            children: [
+                              CircleAvatar(
+                                radius: 60,
+                                backgroundColor: Colors.white24,
+                                backgroundImage:
+                                    selectedImage != null
+                                        ? FileImage(File(selectedImage!.path))
+                                            as ImageProvider
+                                        : (profilePictureUrl != null &&
+                                                profilePictureUrl!.isNotEmpty
+                                            ? NetworkImage(profilePictureUrl!)
+                                            : const AssetImage(
+                                              "assets/images/user_profile.png",
+                                            )),
+                                child:
+                                    selectedImage == null &&
+                                            (profilePictureUrl == null ||
+                                                profilePictureUrl!.isEmpty)
+                                        ? const Icon(
+                                          Icons.add_a_photo,
+                                          color: Colors.white,
+                                          size: 40,
+                                        )
+                                        : null,
+                                onBackgroundImageError: (
+                                  exception,
+                                  stackTrace,
+                                ) {
+                                  print(
+                                    "Error loading profile picture: $exception",
+                                  );
+                                },
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
                                       color: Colors.white,
-                                      size: 40,
-                                    )
-                                    : null,
-                            onBackgroundImageError: (exception, stackTrace) {
-                              print(
-                                "Error loading profile picture: $exception",
-                              );
-                            },
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.edit,
+                                    color: Colors.white,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -362,9 +390,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           onPressed: isSaving ? null : _saveUserProfile,
                           child:
                               isSaving
-                                  ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
+                                  ? const PremiumMindLoader(message: "Saving your profile...")
                                   : const Text(
                                     "Save Changes",
                                     style: TextStyle(color: Colors.white),

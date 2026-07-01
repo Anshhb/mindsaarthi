@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mindsaarthi_app/core/widgets/app_snackbar.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/colors.dart';
 
@@ -175,7 +176,7 @@ class _UserInfoScreenState extends ConsumerState<UserInfoScreen> {
                 onPressed: isLoading ? null : _saveUserInfo,
                 child:
                     isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const PremiumMindLoader(message: "Saving your profile...")
                         : const Text(
                           "Continue",
                           style: TextStyle(color: Colors.white),

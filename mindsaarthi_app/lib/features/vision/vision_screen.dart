@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 import '../../services/vision_service.dart';
 
@@ -33,6 +34,8 @@ class _VisionScreenState extends State<VisionScreen> {
       result = res;
       loading = false;
     });
+
+    await VisionService.saveImageAnalysis(res);
   }
 
   @override
@@ -207,11 +210,7 @@ class _VisionScreenState extends State<VisionScreen> {
               if (loading)
                 Column(
                   children: const [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.purpleAccent,
-                      ),
-                    ),
+                    PremiumMindLoader(message: "Analyzing your image..."),
                     SizedBox(height: 12),
                     Text(
                       "Analyzing your image...",

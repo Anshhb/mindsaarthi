@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 import '../../services/vision_service.dart';
 
@@ -33,6 +34,8 @@ class _VideoScreenState extends State<VideoScreen> {
       result = res;
       loading = false;
     });
+
+    await VisionService.saveVideoAnalysis(res);
   }
 
   @override
@@ -207,11 +210,7 @@ class _VideoScreenState extends State<VideoScreen> {
               if (loading)
                 Column(
                   children: const [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF22D3EF),
-                      ),
-                    ),
+                    PremiumMindLoader(message: "Analyzing your video..."),
                     SizedBox(height: 12),
                     Text(
                       "Analyzing your video...",
@@ -274,7 +273,6 @@ class _VideoScreenState extends State<VideoScreen> {
                           ),
 
                           const SizedBox(height: 18),
-
 
                           const Text(
                             "Insight",

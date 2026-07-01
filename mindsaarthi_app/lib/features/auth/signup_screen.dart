@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mindsaarthi_app/core/widgets/app_snackbar.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 import 'auth_controller.dart';
 
@@ -87,7 +88,7 @@ class SignupScreen extends ConsumerWidget {
                 },
                 child:
                     state.isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const PremiumMindLoader(message: "Creating your account...")
                         : const Text(
                           "Sign up",
                           style: TextStyle(color: Colors.white),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 
 class AnalyticsScreen extends StatelessWidget {
@@ -51,7 +52,7 @@ class AnalyticsScreen extends StatelessWidget {
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
               return const Center(
-                child: CircularProgressIndicator(color: AppColors.primary),
+                child: PremiumMindLoader(message: "Loading your analytics..."),
               );
             }
 

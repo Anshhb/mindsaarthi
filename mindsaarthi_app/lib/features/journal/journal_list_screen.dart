@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mindsaarthi_app/core/widgets/mind_loader.dart';
 import '../../core/colors.dart';
 
 class JournalListScreen extends StatefulWidget {
@@ -110,11 +111,7 @@ class _JournalListScreenState extends State<JournalListScreen> {
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Color(0xFF8B5CF6),
-                          ),
-                        ),
+                        child: PremiumMindLoader(message: "Loading your journal entries..."),
                       );
                     }
 
