@@ -52,3 +52,4 @@ ios/Runner/GoogleService-Info.plist
 app.*.symbols
 app.*.map.json
 .env
+lib/firebase_options.dart
